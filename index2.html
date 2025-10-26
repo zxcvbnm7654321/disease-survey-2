@@ -1,1 +1,1079 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>第二轮疾病病因关联调查</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    .step {
+      display: none;
+      min-height: 300px;
+    }
+    .step.active {
+      display: block;
+      animation: fadeIn 0.5s;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .progress {
+      margin-bottom: 30px;
+      padding: 10px;
+      background-color: #f5f5f5;
+      border-radius: 5px;
+      overflow-x: auto;
+    }
+    .progress span {
+      margin-right: 20px;
+      padding: 5px 10px;
+      border-radius: 3px;
+      white-space: nowrap;
+    }
+    .progress span.active {
+      background-color: #4CAF50;
+      color: white;
+    }
+    .question {
+      margin: 20px 0;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+    .category-item, .disease-item {
+      margin: 8px 0;
+    }
+    select, input[type="checkbox"], input[type="text"] {
+      margin: 5px;
+    }
+    input[type="text"] {
+      padding: 6px 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      width: calc(100% - 150px);
+      min-width: 250px;
+      margin-bottom: 10px;
+      -webkit-appearance: none;
+      appearance: none;
+      font-size: 16px;
+    }
+    @media (max-width: 600px) {
+      input[type="text"] {
+        width: 100%;
+        min-width: auto;
+        margin-left: 0;
+      }
+      label.form-label {
+        display: block;
+        width: 100%;
+        text-align: left;
+        margin-bottom: 5px;
+      }
+      .question {
+        padding: 10px;
+      }
+    }
+    label.form-label {
+      display: inline-block;
+      width: 120px;
+      text-align: right;
+      margin-right: 10px;
+      vertical-align: top;
+    }
+    button {
+      margin: 10px 5px;
+      padding: 8px 16px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    button.secondary {
+      background-color: #f44336;
+    }
+    button.secondary:hover {
+      background-color: #d32f2f;
+    }
+    .message {
+      padding: 10px;
+      margin: 15px 0;
+      border-radius: 4px;
+      display: none;
+    }
+    .success {
+      background-color: #dff0d8;
+      color: #3c763d;
+      display: block;
+    }
+    .error {
+      background-color: #f2dede;
+      color: #a94442;
+      display: block;
+    }
+    .summary {
+      margin: 20px 0;
+      padding: 15px;
+      background-color: #f9f9f9;
+      border-radius: 5px;
+    }
+    .instructions {
+      background-color: #e8f5e9;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    .survey-modules {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      margin-bottom: 25px;
+    }
+    .main-module {
+      background-color: #e8f5e9;
+      padding: 20px;
+      border-radius: 8px;
+    }
+    .classification-module {
+      border: 1px solid #b3e5fc;
+      background-color: #e3f2fd;
+      padding: 20px;
+      border-radius: 8px;
+      font-size: 0.9em;
+    }
+    .survey-flow {
+      font-size: 1.1em;
+    }
+    .closing-note {
+      font-size: 1.1em;
+      margin: 15px 0;
+    }
+    .target-list {
+      margin: 15px 0;
+      padding: 10px;
+      background-color: #fff3e0;
+      border-left: 4px solid #ff9800;
+    }
+    .cause-result {
+      margin: 15px 0;
+      padding: 10px;
+      background-color: #e3f2fd;
+      border-left: 4px solid #2196f3;
+    }
+    .category-group {
+      margin: 10px 0 15px 20px;
+    }
+    .final-message {
+      text-align: center;
+      padding: 40px 20px;
+      background-color: #e8f5e9;
+      border-radius: 8px;
+      margin: 30px 0;
+    }
+    .final-message h2 {
+      color: #2e7d32;
+      margin: 0 0 15px 0;
+    }
+    .empty-state {
+      color: #666;
+      text-align: center;
+      padding: 20px;
+    }
+    .confidence-rating {
+      margin: 5px 0px 15px 0px;
+      padding: 8px;
+      background-color: #f9f9f9;
+      border-radius: 6px;
+    }
+    .confidence-rating label {
+      margin-right: 5px;
+    }
+    .confidence-rating input {
+      margin: 0 5px 0 35px;
+    }
+    .doctor-info {
+      background-color: #fff8e1;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      border-left: 4px solid #ffc107;
+    }
+    /* 数据提交状态提示 */
+    .submit-status {
+      display: inline-block;
+      margin-left: 10px;
+      font-size: 14px;
+    }
+    /* 第一轮结果显示样式 */
+    .previous-result {
+      display: inline-block;
+      background-color: #e3f2fd;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.85em;
+      color: #1976d2;
+      margin-left: 10px;
+    }
+    /* 评分选项样式 */
+    .rating-options {
+      display: flex;
+      flex-wrap: wrap;
+      margin-top: 10px;
+      gap: 10px;
+    }
+    .rating-option {
+      display: flex;
+      align-items: center;
+    }
+    .rating-option input {
+      margin-right: 5px;
+    }
+    /* 疾病对卡片样式 */
+    .disease-pair-card {
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 15px;
+      background-color: #f9f9f9;
+    }
+    .disease-pair-card:hover {
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      transition: box-shadow 0.3s;
+    }
+    .target-disease-title {
+      font-weight: bold;
+      color: #2c3e50;
+      margin-bottom: 10px;
+    }
+    .cause-disease-item {
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 1px dashed #e0e0e0;
+    }
+    .cause-disease-item:last-child {
+      border-bottom: none;
+    }
+    .round-info {
+      font-size: 0.9em;
+      color: #666;
+      margin-bottom: 10px;
+    }
+    .round-highlight {
+      font-weight: bold;
+      color: #2196f3;
+    }
+  </style>
+</head>
+<body>
+<h1>第二轮疾病病因关联调查</h1>
+<div class="progress">
+  <span class="active" id="progress-step0">问卷说明</span>
+  <span id="progress-step1">医师信息</span>
+  <span id="progress-step2">目标疾病选择</span>
+  <span id="progress-step3">目标疾病确认</span>
+  <span id="progress-step4">病因评估</span>
+  <span id="progress-complete">完成</span>
+</div>
+  
+<!-- 步骤0：问卷说明 -->
+<div class="step active" id="step0">
+  <div class="survey-modules">
+    <div class="main-module">
+      <h2>调查目标</h2>
+      <p class="round-info">
+        本调查旨在征询临床专家对疾病间潜在因果关系的专业见解与评估。基于第一轮调查结果，第二轮问卷调查将针对专家意见不收敛的疾病对进行进一步评估。
+    
+      <div class="survey-flow">
+        <p><strong>调查流程：</strong></p>
+        <ol>
+          <li>填写您的基本信息。</li>
+          <li>选择您擅长的疾病大类，并在其下选择您熟悉的目标疾病。</li>
+          <li>针对每个选中的目标疾病，对其相关的病因疾病进行评估。每个病因疾病后均显示第一轮的平均信心值。</li>
+          <li>评分选项：0-5分（0=无关联，1-5=不同程度的关联信心），以及"不清楚"选项。</li>
+        </ol>
+      </div>
+    </div>
+    
+    <div class="classification-module">
+      <h3>【关于本问卷疾病分类标准的说明】</h3>
+      <p>本问卷中的疾病分类参考了"临床分类软件（Clinical Classifications Software, CCS）"标准。CCS是由美国卫生保健研究与品质局（AHRQ）制定的疾病分组系统，其核心是将国际疾病分类（ICD）中数千种细致的诊断代码，归纳为临床意义相近的"疾病群组"。CCS的群组分类能减少细分诊断带来的分析复杂性，便于跨疾病的关联性研究与数据分析。</p>
+      <p>您在问卷中看到的疾病名称已剔除原始CCS编码，仅保留临床常用名称及对应英文名称，具体的CCS名称详见提供的excel文件。若对分类有疑义，请依据临床经验选择最贴近的选项即可。</p>
+    </div>
+  </div>
+  
+  <p class="closing-note">请根据您的专业经验或研究成果进行选择，感谢您的参与与支持！</p>
+  
+  <button onclick="goToStep(1)">开始调查</button>
+</div>
+
+<!-- 步骤1：医师信息收集 -->
+<div class="step" id="step1">
+  <div class="doctor-info">
+    <h3>医师信息</h3>
+    <p>请填写您的基本信息，以便我们更好地整理和分析调查结果</p>
+  </div>
+  
+  <div class="question">
+    <div>
+      <label class="form-label" for="doctor-name">姓名：</label>
+      <input type="text" id="doctor-name" placeholder="请输入您的姓名" tabindex="1" required>
+    </div>
+    
+    <div>
+      <label class="form-label" for="hospital">所属单位：</label>
+      <input type="text" id="hospital" placeholder="请输入您所在的医院/机构" tabindex="2" required>
+    </div>
+  </div>
+  
+  <button class="secondary" onclick="goToStep(0)" tabindex="5">返回说明</button>
+  <button onclick="validateDoctorInfo()" id="step1-next" tabindex="4">下一步</button>
+  <div class="message" id="message1"></div>
+</div>
+
+<!-- 步骤2：目标疾病选择（多选题） -->
+<div class="step" id="step2">
+  <div class="question">
+    <h3>请选择您擅长的目标疾病（可多选）</h3>
+    <p>注：以下仅显示第一轮调查中专家意见不收敛的疾病对中的目标疾病</p>
+    
+    <h4>1. 选择目标疾病大类（可多选）</h4>
+    <div id="target-categories"></div>
+    
+    <h4>2. 从选中的大类中选择具体目标疾病（可多选）</h4>
+    <div id="target-diseases" style="margin-top:15px;"></div>
+  </div>
+  <button class="secondary" onclick="goToStep(1)">返回</button>
+  <button onclick="validateTargetSelection()">下一步</button>
+  <div class="message" id="message2"></div>
+</div>
+
+<!-- 步骤3：目标疾病确认 -->
+<div class="step" id="step3">
+  <div class="question">
+    <h3>您选择的目标疾病如下：</h3>
+    <div id="target-summary" class="target-list"></div>
+    
+    <div style="margin-top:20px;">
+      <h4>接下来的操作：</h4>
+      <p>系统将依次为您选择的每个目标疾病收集病因疾病的评估。每个病因疾病后均显示第一轮的平均信心值。</p>
+      <p><strong>评分说明：</strong>0=无关联，1=非常不确定，2=不太确定，3=一般，4=比较确定，5=非常确定，不清楚=无法判断关联性</p>
+    </div>
+  </div>
+  <button class="secondary" onclick="goToStep(2)">重新选择</button>
+  <button onclick="startCauseEvaluation()">开始评估病因</button>
+</div>
+
+<!-- 步骤4：依次显示目标疾病的病因评估 -->
+<div class="step" id="step4">
+  <div class="question">
+    <h3 id="current-target-title">请评估可能导致【目标疾病】的病因疾病</h3>
+    <p>（每个病因疾病后显示第一轮平均信心值，请根据您的专业判断进行评分）</p>
+    
+    <div id="cause-evaluation-container"></div>
+  </div>
+  <button class="secondary" onclick="goToPreviousStep()">上一步</button>
+  <button onclick="validateCauseEvaluation()">下一步</button>
+  <div class="message" id="message4"></div>
+</div>
+
+<!-- 结束页面 -->
+<div class="step" id="complete">
+  <div class="final-message">
+    <h2>问卷完成，感谢您的填写！</h2>
+    <p>您已成功完成第二轮疾病病因关联调查</p>
+    <div id="submit-status" class="submit-status" style="color: #666;">正在保存您的问卷数据...</div>
+  </div>
+  
+  <div class="summary">
+    <h3>调查总览</h3>
+    <div id="final-summary">
+      <div class="empty-state" id="empty-summary">
+        正在加载您的调查结果...
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.13.0/dist/av-min.js"></script>
+<script>
+  // 初始化LeanCloud（替换为你的App ID、App Key和服务器地址）
+  AV.init({
+    appId: "gGqiiYWebLVD9H2FaNIM1RAW-gzGzoHsz",
+    appKey: "g4SMLGu3xacahGECMpmd7BGt",
+    serverURL: "https://ggqiiywe.lc-cn-n1-shared.com"
+  });
+
+  // 模拟的第一轮不收敛疾病对数据
+  // 这里假设了一些疾病对及其第一轮的平均信心值和专家数量
+  const unconvergedPairs = [
+    {
+      targetDisease: "原发性高血压（Essential hypertension）",
+      targetCategory: "心血管系统疾病（Cardiovascular Diseases）",
+      causeDiseases: [
+        {
+          name: "肾脏和输尿管的其他疾病（Other diseases of kidney and ureters）",
+          category: "泌尿生殖系统疾病（Genitourinary Diseases）",
+          previousAverage: 2.4,
+          expertCount: 12
+        },
+        {
+          name: "脂质代谢紊乱（Disorders of lipid metabolism）",
+          category: "内分泌、代谢及营养疾病（Endocrine, Metabolic & Nutritional Disorders）",
+          previousAverage: 3.1,
+          expertCount: 15
+        },
+        {
+          name: "慢性阻塞性肺病和支气管扩张（Chronic obstructive pulmonary disease and bronchiectasis）",
+          category: "呼吸系统疾病（Respiratory Diseases）",
+          previousAverage: 1.8,
+          expertCount: 9
+        }
+      ]
+    },
+    {
+      targetDisease: "2型糖尿病（Type 2 diabetes mellitus）",
+      targetCategory: "内分泌、代谢及营养疾病（Endocrine, Metabolic & Nutritional Disorders）",
+      causeDiseases: [
+        {
+          name: "肥胖症（Obesity）",
+          category: "内分泌、代谢及营养疾病（Endocrine, Metabolic & Nutritional Disorders）",
+          previousAverage: 4.2,
+          expertCount: 18
+        },
+        {
+          name: "高血压伴并发症和继发性高血压（Hypertension with complications and secondary hypertension）",
+          category: "心血管系统疾病（Cardiovascular Diseases）",
+          previousAverage: 2.9,
+          expertCount: 14
+        },
+        {
+          name: "非酒精性脂肪肝（Non-alcoholic fatty liver disease）",
+          category: "消化系统疾病（Gastrointestinal Diseases）",
+          previousAverage: 3.5,
+          expertCount: 11
+        },
+        {
+          name: "多囊卵巢综合征（Polycystic ovary syndrome）",
+          category: "泌尿生殖系统疾病（Genitourinary Diseases）",
+          previousAverage: 2.7,
+          expertCount: 8
+        }
+      ]
+    },
+    {
+      targetDisease: "冠心病（Coronary heart disease）",
+      targetCategory: "心血管系统疾病（Cardiovascular Diseases）",
+      causeDiseases: [
+        {
+          name: "2型糖尿病（Type 2 diabetes mellitus）",
+          category: "内分泌、代谢及营养疾病（Endocrine, Metabolic & Nutritional Disorders）",
+          previousAverage: 4.5,
+          expertCount: 20
+        },
+        {
+          name: "原发性高血压（Essential hypertension）",
+          category: "心血管系统疾病（Cardiovascular Diseases）",
+          previousAverage: 4.7,
+          expertCount: 22
+        },
+        {
+          name: "脂质代谢紊乱（Disorders of lipid metabolism）",
+          category: "内分泌、代谢及营养疾病（Endocrine, Metabolic & Nutritional Disorders）",
+          previousAverage: 4.6,
+          expertCount: 19
+        },
+        {
+          name: "慢性肾脏疾病（Chronic kidney disease）",
+          category: "泌尿生殖系统疾病（Genitourinary Diseases）",
+          previousAverage: 3.2,
+          expertCount: 13
+        }
+      ]
+    },
+    {
+      targetDisease: "脑卒中（Stroke）",
+      targetCategory: "脑血管及神经系统疾病（Cerebrovascular & Neurological Diseases）",
+      causeDiseases: [
+        {
+          name: "原发性高血压（Essential hypertension）",
+          category: "心血管系统疾病（Cardiovascular Diseases）",
+          previousAverage: 4.8,
+          expertCount: 25
+        },
+        {
+          name: "心房颤动（Atrial fibrillation）",
+          category: "心血管系统疾病（Cardiovascular Diseases）",
+          previousAverage: 4.3,
+          expertCount: 17
+        },
+        {
+          name: "2型糖尿病（Type 2 diabetes mellitus）",
+          category: "内分泌、代谢及营养疾病（Endocrine, Metabolic & Nutritional Disorders）",
+          previousAverage: 3.9,
+          expertCount: 16
+        },
+        {
+          name: "睡眠呼吸暂停综合征（Sleep apnea syndrome）",
+          category: "呼吸系统疾病（Respiratory Diseases）",
+          previousAverage: 2.6,
+          expertCount: 10
+        }
+      ]
+    },
+    {
+      targetDisease: "慢性肾脏病（Chronic kidney disease）",
+      targetCategory: "泌尿生殖系统疾病（Genitourinary Diseases）",
+      causeDiseases: [
+        {
+          name: "原发性高血压（Essential hypertension）",
+          category: "心血管系统疾病（Cardiovascular Diseases）",
+          previousAverage: 4.1,
+          expertCount: 18
+        },
+        {
+          name: "2型糖尿病（Type 2 diabetes mellitus）",
+          category: "内分泌、代谢及营养疾病（Endocrine, Metabolic & Nutritional Disorders）",
+          previousAverage: 4.0,
+          expertCount: 17
+        },
+        {
+          name: "肾小球肾炎（Glomerulonephritis）",
+          category: "泌尿生殖系统疾病（Genitourinary Diseases）",
+          previousAverage: 3.8,
+          expertCount: 14
+        },
+        {
+          name: "系统性红斑狼疮（Systemic lupus erythematosus）",
+          category: "肌肉骨骼系统疾病（Musculoskeletal Disorders）",
+          previousAverage: 2.5,
+          expertCount: 9
+        }
+      ]
+    },
+    {
+      targetDisease: "慢性阻塞性肺疾病（Chronic obstructive pulmonary disease）",
+      targetCategory: "呼吸系统疾病（Respiratory Diseases）",
+      causeDiseases: [
+        {
+          name: "肺气肿（Emphysema）",
+          category: "呼吸系统疾病（Respiratory Diseases）",
+          previousAverage: 4.4,
+          expertCount: 20
+        },
+        {
+          name: "慢性支气管炎（Chronic bronchitis）",
+          category: "呼吸系统疾病（Respiratory Diseases）",
+          previousAverage: 4.6,
+          expertCount: 21
+        },
+        {
+          name: "支气管扩张症（Bronchiectasis）",
+          category: "呼吸系统疾病（Respiratory Diseases）",
+          previousAverage: 3.7,
+          expertCount: 15
+        },
+        {
+          name: "肺纤维化（Pulmonary fibrosis）",
+          category: "呼吸系统疾病（Respiratory Diseases）",
+          previousAverage: 2.8,
+          expertCount: 11
+        }
+      ]
+    }
+  ];
+
+  // 从unconvergedPairs中提取目标疾病分类
+  function getTargetCategories() {
+    const categories = {};
+    unconvergedPairs.forEach(pair => {
+      if (!categories[pair.targetCategory]) {
+        categories[pair.targetCategory] = [];
+      }
+      categories[pair.targetCategory].push({
+        name: pair.targetDisease,
+        causeCount: pair.causeDiseases.length
+      });
+    });
+    return categories;
+  }
+
+  let userData = {
+    expertId: generateAnonymousId(),
+    currentRound: 2,
+    doctorName: '',
+    hospital: '',
+    targetDiseases: [],
+    currentTargetIndex: 0,
+    allEvaluations: [],
+    submitTime: '' // 记录提交时间
+  };
+  
+  // 生成匿名ID（用于区分不同专家，保护隐私）
+  function generateAnonymousId() {
+    return 'exp_' + Math.random().toString(36).substr(2, 9) + '_' + new Date().getTime();
+  }
+  
+  // 页面加载初始化
+  document.addEventListener('DOMContentLoaded', function() {
+    // 初始化疾病选择界面
+    initTargetSelection();
+
+    // 修复PC端点击下一步无响应问题
+    document.getElementById('step1-next').addEventListener('click', function(e) {
+      e.preventDefault();
+      validateDoctorInfo();
+    });
+  });
+  
+  // 验证医师信息
+  function validateDoctorInfo() {
+    const name = document.getElementById('doctor-name').value.trim();
+    const hospital = document.getElementById('hospital').value.trim();
+    
+    if (!name || !hospital || !department) {
+      showMessage('请填写姓名所属单位', 1, 'error');
+      return;
+    }
+    
+    // 保存医师信息
+    userData.doctorName = name;
+    userData.hospital = hospital;
+    
+    goToStep(2);
+  }
+  
+  // 初始化目标疾病选择
+  function initTargetSelection() {
+    const targetCategories = getTargetCategories();
+    const targetCategoriesDiv = document.getElementById('target-categories');
+    targetCategoriesDiv.innerHTML = '';
+    
+    Object.keys(targetCategories).forEach(category => {
+      targetCategoriesDiv.innerHTML += `
+        <div class="category-item">
+          <input type="checkbox" id="target-category-${category.replace(/\s+/g, '-')}" 
+                 value="${category}" onchange="updateTargetDiseases()">
+          <label for="target-category-${category.replace(/\s+/g, '-')}">${category}</label>
+          <span class="previous-result">${targetCategories[category].length}种疾病</span>
+        </div>
+      `;
+    });
+  }
+  
+  // 更新目标疾病列表
+  function updateTargetDiseases() {
+    const selectedCategories = [];
+    document.querySelectorAll('#target-categories input:checked').forEach(checkbox => {
+      selectedCategories.push(checkbox.value);
+    });
+    
+    const targetCategories = getTargetCategories();
+    const targetDiseasesDiv = document.getElementById('target-diseases');
+    
+    if (selectedCategories.length === 0) {
+      targetDiseasesDiv.innerHTML = '<p>请先选择至少一个目标疾病大类</p>';
+      return;
+    }
+    
+    targetDiseasesDiv.innerHTML = '';
+    
+    selectedCategories.forEach(category => {
+      const diseases = targetCategories[category] || [];
+      let html = `<div style="margin-bottom:15px;"><strong>${category}</strong>`;
+      
+      diseases.forEach(disease => {
+        html += `
+          <div class="disease-item">
+            <input type="checkbox" id="target-disease-${disease.name.replace(/\s+/g, '-')}" 
+                   value="${disease.name}" data-category="${category}">
+            <label for="target-disease-${disease.name.replace(/\s+/g, '-')}">${disease.name}</label>
+            <span class="previous-result">${disease.causeCount}个病因</span>
+          </div>
+        `;
+      });
+      
+      html += '</div>';
+      targetDiseasesDiv.innerHTML += html;
+    });
+  }
+  
+  // 验证目标疾病选择
+  function validateTargetSelection() {
+    const selectedDiseases = [];
+    document.querySelectorAll('#target-diseases input:checked').forEach(checkbox => {
+      selectedDiseases.push({
+        category: checkbox.getAttribute('data-category'),
+        name: checkbox.value
+      });
+    });
+    
+    if (selectedDiseases.length === 0) {
+      showMessage('请至少选择一个具体的目标疾病', 2, 'error');
+      return;
+    }
+    
+    userData.targetDiseases = selectedDiseases;
+    
+    // 生成目标疾病确认内容
+    const targetSummary = document.getElementById('target-summary');
+    targetSummary.innerHTML = selectedDiseases.map((d, i) => {
+      // 查找该目标疾病对应的病因数量
+      const targetPair = unconvergedPairs.find(pair => pair.targetDisease === d.name);
+      const causeCount = targetPair ? targetPair.causeDiseases.length : 0;
+      return `<p><strong>${i+1}. ${d.name}</strong>（大类：${d.category}，需评估${causeCount}个病因）</p>`;
+    }).join('');
+    
+    goToStep(3);
+  }
+  
+  // 开始处理病因评估
+  function startCauseEvaluation() {
+    userData.currentTargetIndex = 0;
+    userData.allEvaluations = [];
+    loadCurrentTargetEvaluation();
+    goToStep(4);
+  }
+  
+  // 加载当前目标疾病的病因评估
+  function loadCurrentTargetEvaluation() {
+    const currentTarget = userData.targetDiseases[userData.currentTargetIndex];
+    document.getElementById('current-target-title').textContent = 
+      `请评估可能导致【${currentTarget.name}】的病因疾病`;
+    
+    // 查找该目标疾病对应的病因疾病
+    const targetPair = unconvergedPairs.find(pair => pair.targetDisease === currentTarget.name);
+    
+    if (!targetPair || !targetPair.causeDiseases || targetPair.causeDiseases.length === 0) {
+      document.getElementById('cause-evaluation-container').innerHTML = 
+        '<div class="empty-state">未找到相关病因疾病数据</div>';
+      return;
+    }
+    
+    // 生成病因评估内容
+    const container = document.getElementById('cause-evaluation-container');
+    container.innerHTML = '';
+    
+    targetPair.causeDiseases.forEach((cause, index) => {
+      const causeId = `cause-${index}-${cause.name.replace(/\s+/g, '-')}`;
+      
+      container.innerHTML += `
+        <div class="disease-pair-card">
+          <div class="cause-disease-item">
+            <p><strong>${index + 1}. ${cause.name}</strong> 
+              <span class="previous-result">第一轮平均信心值: ${cause.previousAverage.toFixed(1)} (${cause.expertCount}位专家)</span>
+            </p>
+            <p>请评估该疾病与目标疾病的关联性：</p>
+            
+            <div class="rating-options">
+              <div class="rating-option">
+                <input type="radio" name="${causeId}" value="0" id="${causeId}-0" required>
+                <label for="${causeId}-0">0 (无关联)</label>
+              </div>
+              <div class="rating-option">
+                <input type="radio" name="${causeId}" value="1" id="${causeId}-1">
+                <label for="${causeId}-1">1 (非常不确定)</label>
+              </div>
+              <div class="rating-option">
+                <input type="radio" name="${causeId}" value="2" id="${causeId}-2">
+                <label for="${causeId}-2">2 (不太确定)</label>
+              </div>
+              <div class="rating-option">
+                <input type="radio" name="${causeId}" value="3" id="${causeId}-3">
+                <label for="${causeId}-3">3 (一般)</label>
+              </div>
+              <div class="rating-option">
+                <input type="radio" name="${causeId}" value="4" id="${causeId}-4">
+                <label for="${causeId}-4">4 (比较确定)</label>
+              </div>
+              <div class="rating-option">
+                <input type="radio" name="${causeId}" value="5" id="${causeId}-5">
+                <label for="${causeId}-5">5 (非常确定)</label>
+              </div>
+              <div class="rating-option">
+                <input type="radio" name="${causeId}" value="unclear" id="${causeId}-unclear">
+                <label for="${causeId}-unclear">不清楚</label>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    });
+  }
+  
+  // 验证病因评估并进入下一步
+  function validateCauseEvaluation() {
+    const currentTarget = userData.targetDiseases[userData.currentTargetIndex];
+    const targetPair = unconvergedPairs.find(pair => pair.targetDisease === currentTarget.name);
+    
+    if (!targetPair || !targetPair.causeDiseases || targetPair.causeDiseases.length === 0) {
+      // 没有病因疾病需要评估，直接进入下一步
+      processNextTarget();
+      return;
+    }
+    
+    // 收集评估结果
+    const evaluations = [];
+    let allRated = true;
+    
+    targetPair.causeDiseases.forEach((cause, index) => {
+      const causeId = `cause-${index}-${cause.name.replace(/\s+/g, '-')}`;
+      const selectedOption = document.querySelector(`input[name="${causeId}"]:checked`);
+      
+      if (!selectedOption) {
+        allRated = false;
+        return;
+      }
+      
+      evaluations.push({
+        causeDisease: cause.name,
+        causeCategory: cause.category,
+        previousAverage: cause.previousAverage,
+        previousExpertCount: cause.expertCount,
+        rating: selectedOption.value
+      });
+    });
+    
+    if (!allRated) {
+      showMessage('请为所有病因疾病完成评估', 4, 'error');
+      return;
+    }
+    
+    // 保存当前目标疾病的评估结果
+    userData.allEvaluations.push({
+      targetDisease: currentTarget.name,
+      targetCategory: currentTarget.category,
+      evaluations: evaluations
+    });
+    
+    // 继续流程
+    processNextTarget();
+  }
+  
+  // 处理下一个目标疾病
+  function processNextTarget() {
+    userData.currentTargetIndex++;
+    if (userData.currentTargetIndex < userData.targetDiseases.length) {
+      loadCurrentTargetEvaluation();
+      goToStep(4);
+    } else {
+      // 完成所有目标疾病的评估
+      try {
+        generateFinalSummary();
+        // 记录提交时间
+        userData.submitTime = new Date().toISOString();
+        // 提交数据到LeanCloud
+        saveToLeanCloud();
+      } catch (e) {
+        console.error('生成总结失败:', e);
+      } finally {
+        goToStep('complete');
+      }
+    }
+  }
+  
+  // 生成最终总结
+  function generateFinalSummary() {
+    const finalSummary = document.getElementById('final-summary');
+    finalSummary.innerHTML = '';
+    
+    if (!userData.allEvaluations || userData.allEvaluations.length === 0) {
+      finalSummary.innerHTML = '<div class="empty-state">没有找到调查结果</div>';
+      return;
+    }
+    
+    userData.allEvaluations.forEach((item, index) => {
+      let html = `
+        <div style="margin-bottom:20px;">
+          <p><strong>${index + 1}. 目标疾病：${item.targetDisease}</strong>（${item.targetCategory}）</p>
+      `;
+      
+      if (item.evaluations.length === 0) {
+        html += '<p>未评估任何病因疾病。</p>';
+      } else {
+        html += '<p><strong>病因疾病评估结果：</strong></p>';
+        
+        // 按大类分组
+        const categoryGroups = {};
+        item.evaluations.forEach(e => {
+          if (!categoryGroups[e.causeCategory]) categoryGroups[e.causeCategory] = [];
+          categoryGroups[e.causeCategory].push(e);
+        });
+        
+        Object.keys(categoryGroups).forEach(cat => {
+          html += `<div class="category-group"><strong>${cat}：</strong><ul>`;
+          categoryGroups[cat].forEach(e => {
+            const ratingText = getRatingText(e.rating);
+            html += `
+              <li>
+                ${e.causeDisease}
+                <div class="confidence-rating">
+                  <span>第一轮平均：${e.previousAverage.toFixed(1)}</span>
+                  <span style="margin-left: 20px;">您的评分：${e.rating} (${ratingText})</span>
+                </div>
+              </li>
+            `;
+          });
+          html += '</ul></div>';
+        });
+      }
+      
+      html += '</div>';
+      finalSummary.innerHTML += html;
+    });
+  }
+  
+  // 获取评分对应的文本描述
+  function getRatingText(rating) {
+    switch(rating) {
+      case '0': return '无关联';
+      case '1': return '非常不确定';
+      case '2': return '不太确定';
+      case '3': return '一般';
+      case '4': return '比较确定';
+      case '5': return '非常确定';
+      case 'unclear': return '不清楚';
+      default: return '';
+    }
+  }
+  
+  // 保存数据到LeanCloud
+  function saveToLeanCloud() {
+    // 准备要保存的数据
+    const surveyData = {
+      expertId: userData.expertId,
+      doctorName: userData.doctorName,
+      hospital: userData.hospital,
+      currentRound: userData.currentRound,
+      submitTime: userData.submitTime,
+      targetDiseasesCount: userData.targetDiseases.length,
+      allEvaluations: userData.allEvaluations.map(item => ({
+        targetDisease: item.targetDisease,
+        targetCategory: item.targetCategory,
+        evaluations: item.evaluations.map(e => ({
+          causeDisease: e.causeDisease,
+          causeCategory: e.causeCategory,
+          previousAverage: e.previousAverage,
+          previousExpertCount: e.previousExpertCount,
+          rating: e.rating,
+          ratingText: getRatingText(e.rating)
+        }))
+      }))
+    };
+    console.log("要保存到LeanCloud的数据：", surveyData);
+
+    // 创建LeanCloud数据表（第二轮结果保存在Survey-2-Results中）
+    const SurveyResult = AV.Object.extend('Survey-2-Results');
+    const result = new SurveyResult();
+
+    // 保存数据到表中
+    result.save(surveyData)
+      .then(savedResult => {
+        console.log('数据保存成功:', savedResult);
+        document.getElementById('submit-status').textContent = '问卷数据已成功保存！';
+        document.getElementById('submit-status').style.color = '#3c763d';
+      })
+      .catch(error => {
+        console.error('数据保存失败:', error);
+        document.getElementById('submit-status').textContent = '数据保存失败，请联系管理员！';
+        document.getElementById('submit-status').style.color = '#a94442';
+        
+        // 失败时提供手动备份选项
+        const backupData = JSON.stringify(surveyData, null, 2);
+        const textarea = document.createElement('textarea');
+        textarea.style.width = '100%';
+        textarea.style.height = '150px';
+        textarea.style.marginTop = '10px';
+        textarea.value = '数据备份：\n' + backupData;
+        document.querySelector('.final-message').appendChild(textarea);
+      });
+  }
+  
+  // 步骤切换函数
+  function goToStep(stepNumber) {
+    try {
+      // 移除所有步骤的active类
+      document.querySelectorAll('.step').forEach(step => {
+        step.classList.remove('active');
+      });
+      
+      // 处理目标步骤
+      let targetStep;
+      if (stepNumber === 'complete') {
+        targetStep = document.getElementById('complete');
+      } else {
+        targetStep = document.getElementById('step' + stepNumber);
+      }
+      
+      if (targetStep) {
+        targetStep.classList.add('active');
+        window.scrollTo(0, 0);
+      } else {
+        forceFinish();
+      }
+      
+      // 更新进度条
+      document.querySelectorAll('.progress span').forEach(span => {
+        span.classList.remove('active');
+      });
+      if (stepNumber === 'complete') {
+        document.getElementById('progress-complete').classList.add('active');
+      } else {
+        for (let i = 0; i <= stepNumber; i++) {
+          const el = document.getElementById('progress-step' + i);
+          if (el) el.classList.add('active');
+        }
+      }
+    } catch (error) {
+      console.error('步骤切换失败:', error);
+      forceFinish();
+    }
+  }
+  
+  // 强制结束函数
+  function forceFinish() {
+    document.querySelectorAll('.step').forEach(step => {
+      step.classList.remove('active');
+    });
+    document.getElementById('complete').classList.add('active');
+    document.querySelectorAll('.progress span').forEach(span => {
+      span.classList.remove('active');
+    });
+    document.getElementById('progress-complete').classList.add('active');
+  }
+  
+  // 上一步按钮逻辑
+  function goToPreviousStep() {
+    if (userData.currentTargetIndex === 0) {
+      goToStep(3);
+    } else {
+      userData.currentTargetIndex--;
+      loadCurrentTargetEvaluation();
+      goToStep(4);
+    }
+  }
+  
+  function showMessage(text, step, type) {
+    const el = document.getElementById('message' + step);
+    if (el) {
+      el.textContent = text;
+      el.className = 'message ' + type;
+      el.style.display = 'block';
+      setTimeout(() => el.style.display = 'none', 5000);
+    }
+  }
+</script>
+</body>
+</html>
 

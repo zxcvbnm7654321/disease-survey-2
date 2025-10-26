@@ -417,92 +417,94 @@
 
   // 模拟的第一轮不收敛疾病对数据
   // 这里假设了一些疾病对及其第一轮的平均信心值和专家数量
-  let unconvergedPairs;
+    let unconvergedPairs; // 先声明unconvergedPairs，后续从JSON文件加载数据后赋值
+    let targetDiseaseCategories = {}; // 新增变量，用于存储按大类分类后的目标疾病数据
 
-  // 从unconvergedPairs中提取目标疾病分类
-  function getTargetCategories() {
-    const categories = {};
-    unconvergedPairs.forEach(pair => {
-      if (!categories[pair.targetCategory]) {
-        categories[pair.targetCategory] = [];
-      }
-      categories[pair.targetCategory].push({
-        name: pair.targetDisease,
-        causeCount: pair.causeDiseases.length
-      });
-    });
-    return categories;
-  }
+    // 从unconvergedPairs中提取目标疾病分类，并按大类分类
+    function getTargetCategories() {
+        // 清空之前可能存在的数据
+        targetDiseaseCategories = {}; 
+        unconvergedPairs.forEach(pair => {
+            if (!targetDiseaseCategories[pair.targetCategory]) {
+                targetDiseaseCategories[pair.targetCategory] = [];
+            }
+            targetDiseaseCategories[pair.targetCategory].push({
+                name: pair.targetDisease,
+                causeCount: pair.causeDiseases.length
+            });
+        });
+        return targetDiseaseCategories;
+    }
 
-  let userData = {
-    expertId: generateAnonymousId(),
-    currentRound: 2,
-    doctorName: '',
-    hospital: '',
-    targetDiseases: [],
-    currentTargetIndex: 0,
-    allEvaluations: [],
-    submitTime: '' // 记录提交时间
-  };
-  
-  // 生成匿名ID（用于区分不同专家，保护隐私）
-  function generateAnonymousId() {
-    return 'exp_' + Math.random().toString(36).substr(2, 9) + '_' + new Date().getTime();
-  }
-  
-  // 页面加载初始化
+    let userData = {
+        expertId: generateAnonymousId(),
+        currentRound: 2,
+        doctorName: '',
+        hospital: '',
+        targetDiseases: [],
+        currentTargetIndex: 0,
+        allEvaluations: [],
+        submitTime: '' // 记录提交时间
+    };
+
+    // 生成匿名ID（用于区分不同专家，保护隐私）
+    function generateAnonymousId() {
+        return 'exp_' + Math.random().toString(36).substr(2, 9) + '_' + new Date().getTime();
+    }
+
+    // 页面加载初始化
     document.addEventListener('DOMContentLoaded', function () {
         // 从JSON文件中加载数据
         fetch('信心值统计结果_hm.json')
            .then(response => response.json())
            .then(data => {
-                unconvergedPairs = data; // 将从JSON文件读取的数据赋值给unconvergedPairs，替换原模拟数据
-                // 初始化疾病选择界面
-                initTargetSelection();
+                unconvergedPairs = data;
+                // 初始化疾病选择界面，这里会调用getTargetCategories进行按大类分类
+                initTargetSelection(); 
             })
            .catch(error => console.error('读取JSON文件出错:', error));
 
-    // 修复PC端点击下一步无响应问题
-    document.getElementById('step1-next').addEventListener('click', function(e) {
-      e.preventDefault();
-      validateDoctorInfo();
+        // 修复PC端点击下一步无响应问题
+        document.getElementById('step1-next').addEventListener('click', function (e) {
+            e.preventDefault();
+            validateDoctorInfo();
+        });
     });
-  });
-  
-  // 验证医师信息
-  function validateDoctorInfo() {
-    const name = document.getElementById('doctor-name').value.trim();
-    const hospital = document.getElementById('hospital').value.trim();
-    
-    if (!name || !hospital) {
-      showMessage('请填写姓名所属单位', 1, 'error');
-      return;
+
+    // 验证医师信息
+    function validateDoctorInfo() {
+        const name = document.getElementById('doctor-name').value.trim();
+        const hospital = document.getElementById('hospital').value.trim();
+
+        if (!name ||!hospital) {
+            showMessage('请填写姓名所属单位', 1, 'error');
+            return;
+        }
+
+        // 保存医师信息
+        userData.doctorName = name;
+        userData.hospital = hospital;
+
+        goToStep(2);
     }
-    
-    // 保存医师信息
-    userData.doctorName = name;
-    userData.hospital = hospital;
-    
-    goToStep(2);
-  }
-  
-  // 初始化目标疾病选择
-  function initTargetSelection() {
-    const targetCategories = getTargetCategories();
-    const targetCategoriesDiv = document.getElementById('target-categories');
-    targetCategoriesDiv.innerHTML = '';
-    
-    Object.keys(targetCategories).forEach(category => {
-      targetCategoriesDiv.innerHTML += `
-        <div class="category-item">
-          <input type="checkbox" id="target-category-${category.replace(/\s+/g, '-')}" 
-                 value="${category}" onchange="updateTargetDiseases()">
-          <label for="target-category-${category.replace(/\s+/g, '-')}">${category}</label>
-          <span class="previous-result">${targetCategories[category].length}种疾病</span>
-        </div>
-      `;
-    });
-  }
+
+    // 初始化目标疾病选择
+    function initTargetSelection() {
+        const targetCategories = getTargetCategories();
+        const targetCategoriesDiv = document.getElementById('target-categories');
+        targetCategoriesDiv.innerHTML = '';
+
+        Object.keys(targetCategories).forEach(category => {
+            targetCategoriesDiv.innerHTML += `
+                <div class="category-item">
+                    <input type="checkbox" id="target-category-${category.replace(/\s+/g, '-')}" 
+                           value="${category}" onchange="updateTargetDiseases()">
+                    <label for="target-category-${category.replace(/\s+/g, '-')}">${category}</label>
+                    <span class="previous-result">${targetCategories[category].length}种疾病</span>
+                </div>
+            `;
+        });
+    }
   
   // 更新目标疾病列表
   function updateTargetDiseases() {

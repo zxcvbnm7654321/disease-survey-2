@@ -642,7 +642,7 @@
     const name = document.getElementById('doctor-name').value.trim();
     const hospital = document.getElementById('hospital').value.trim();
     
-    if (!name || !hospital || !department) {
+    if (!name || !hospital) {
       showMessage('请填写姓名所属单位', 1, 'error');
       return;
     }

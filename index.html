@@ -417,182 +417,7 @@
 
   // 模拟的第一轮不收敛疾病对数据
   // 这里假设了一些疾病对及其第一轮的平均信心值和专家数量
-  const unconvergedPairs = [
-    {
-      targetDisease: "原发性高血压（Essential hypertension）",
-      targetCategory: "心血管系统疾病（Cardiovascular Diseases）",
-      causeDiseases: [
-        {
-          name: "肾脏和输尿管的其他疾病（Other diseases of kidney and ureters）",
-          category: "泌尿生殖系统疾病（Genitourinary Diseases）",
-          previousAverage: 2.4,
-          expertCount: 12
-        },
-        {
-          name: "脂质代谢紊乱（Disorders of lipid metabolism）",
-          category: "内分泌、代谢及营养疾病（Endocrine, Metabolic & Nutritional Disorders）",
-          previousAverage: 3.1,
-          expertCount: 15
-        },
-        {
-          name: "慢性阻塞性肺病和支气管扩张（Chronic obstructive pulmonary disease and bronchiectasis）",
-          category: "呼吸系统疾病（Respiratory Diseases）",
-          previousAverage: 1.8,
-          expertCount: 9
-        }
-      ]
-    },
-    {
-      targetDisease: "2型糖尿病（Type 2 diabetes mellitus）",
-      targetCategory: "内分泌、代谢及营养疾病（Endocrine, Metabolic & Nutritional Disorders）",
-      causeDiseases: [
-        {
-          name: "肥胖症（Obesity）",
-          category: "内分泌、代谢及营养疾病（Endocrine, Metabolic & Nutritional Disorders）",
-          previousAverage: 4.2,
-          expertCount: 18
-        },
-        {
-          name: "高血压伴并发症和继发性高血压（Hypertension with complications and secondary hypertension）",
-          category: "心血管系统疾病（Cardiovascular Diseases）",
-          previousAverage: 2.9,
-          expertCount: 14
-        },
-        {
-          name: "非酒精性脂肪肝（Non-alcoholic fatty liver disease）",
-          category: "消化系统疾病（Gastrointestinal Diseases）",
-          previousAverage: 3.5,
-          expertCount: 11
-        },
-        {
-          name: "多囊卵巢综合征（Polycystic ovary syndrome）",
-          category: "泌尿生殖系统疾病（Genitourinary Diseases）",
-          previousAverage: 2.7,
-          expertCount: 8
-        }
-      ]
-    },
-    {
-      targetDisease: "冠心病（Coronary heart disease）",
-      targetCategory: "心血管系统疾病（Cardiovascular Diseases）",
-      causeDiseases: [
-        {
-          name: "2型糖尿病（Type 2 diabetes mellitus）",
-          category: "内分泌、代谢及营养疾病（Endocrine, Metabolic & Nutritional Disorders）",
-          previousAverage: 4.5,
-          expertCount: 20
-        },
-        {
-          name: "原发性高血压（Essential hypertension）",
-          category: "心血管系统疾病（Cardiovascular Diseases）",
-          previousAverage: 4.7,
-          expertCount: 22
-        },
-        {
-          name: "脂质代谢紊乱（Disorders of lipid metabolism）",
-          category: "内分泌、代谢及营养疾病（Endocrine, Metabolic & Nutritional Disorders）",
-          previousAverage: 4.6,
-          expertCount: 19
-        },
-        {
-          name: "慢性肾脏疾病（Chronic kidney disease）",
-          category: "泌尿生殖系统疾病（Genitourinary Diseases）",
-          previousAverage: 3.2,
-          expertCount: 13
-        }
-      ]
-    },
-    {
-      targetDisease: "脑卒中（Stroke）",
-      targetCategory: "脑血管及神经系统疾病（Cerebrovascular & Neurological Diseases）",
-      causeDiseases: [
-        {
-          name: "原发性高血压（Essential hypertension）",
-          category: "心血管系统疾病（Cardiovascular Diseases）",
-          previousAverage: 4.8,
-          expertCount: 25
-        },
-        {
-          name: "心房颤动（Atrial fibrillation）",
-          category: "心血管系统疾病（Cardiovascular Diseases）",
-          previousAverage: 4.3,
-          expertCount: 17
-        },
-        {
-          name: "2型糖尿病（Type 2 diabetes mellitus）",
-          category: "内分泌、代谢及营养疾病（Endocrine, Metabolic & Nutritional Disorders）",
-          previousAverage: 3.9,
-          expertCount: 16
-        },
-        {
-          name: "睡眠呼吸暂停综合征（Sleep apnea syndrome）",
-          category: "呼吸系统疾病（Respiratory Diseases）",
-          previousAverage: 2.6,
-          expertCount: 10
-        }
-      ]
-    },
-    {
-      targetDisease: "慢性肾脏病（Chronic kidney disease）",
-      targetCategory: "泌尿生殖系统疾病（Genitourinary Diseases）",
-      causeDiseases: [
-        {
-          name: "原发性高血压（Essential hypertension）",
-          category: "心血管系统疾病（Cardiovascular Diseases）",
-          previousAverage: 4.1,
-          expertCount: 18
-        },
-        {
-          name: "2型糖尿病（Type 2 diabetes mellitus）",
-          category: "内分泌、代谢及营养疾病（Endocrine, Metabolic & Nutritional Disorders）",
-          previousAverage: 4.0,
-          expertCount: 17
-        },
-        {
-          name: "肾小球肾炎（Glomerulonephritis）",
-          category: "泌尿生殖系统疾病（Genitourinary Diseases）",
-          previousAverage: 3.8,
-          expertCount: 14
-        },
-        {
-          name: "系统性红斑狼疮（Systemic lupus erythematosus）",
-          category: "肌肉骨骼系统疾病（Musculoskeletal Disorders）",
-          previousAverage: 2.5,
-          expertCount: 9
-        }
-      ]
-    },
-    {
-      targetDisease: "慢性阻塞性肺疾病（Chronic obstructive pulmonary disease）",
-      targetCategory: "呼吸系统疾病（Respiratory Diseases）",
-      causeDiseases: [
-        {
-          name: "肺气肿（Emphysema）",
-          category: "呼吸系统疾病（Respiratory Diseases）",
-          previousAverage: 4.4,
-          expertCount: 20
-        },
-        {
-          name: "慢性支气管炎（Chronic bronchitis）",
-          category: "呼吸系统疾病（Respiratory Diseases）",
-          previousAverage: 4.6,
-          expertCount: 21
-        },
-        {
-          name: "支气管扩张症（Bronchiectasis）",
-          category: "呼吸系统疾病（Respiratory Diseases）",
-          previousAverage: 3.7,
-          expertCount: 15
-        },
-        {
-          name: "肺纤维化（Pulmonary fibrosis）",
-          category: "呼吸系统疾病（Respiratory Diseases）",
-          previousAverage: 2.8,
-          expertCount: 11
-        }
-      ]
-    }
-  ];
+  let unconvergedPairs;
 
   // 从unconvergedPairs中提取目标疾病分类
   function getTargetCategories() {
@@ -626,9 +451,16 @@
   }
   
   // 页面加载初始化
-  document.addEventListener('DOMContentLoaded', function() {
-    // 初始化疾病选择界面
-    initTargetSelection();
+    document.addEventListener('DOMContentLoaded', function () {
+        // 从JSON文件中加载数据
+        fetch('信心值统计结果_hm.json')
+           .then(response => response.json())
+           .then(data => {
+                unconvergedPairs = data; // 将从JSON文件读取的数据赋值给unconvergedPairs，替换原模拟数据
+                // 初始化疾病选择界面
+                initTargetSelection();
+            })
+           .catch(error => console.error('读取JSON文件出错:', error));
 
     // 修复PC端点击下一步无响应问题
     document.getElementById('step1-next').addEventListener('click', function(e) {

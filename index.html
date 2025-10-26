@@ -974,7 +974,7 @@
     console.log("要保存到LeanCloud的数据：", surveyData);
 
     // 创建LeanCloud数据表（第二轮结果保存在Survey-2-Results中）
-    const SurveyResult = AV.Object.extend('Survey-2-Results');
+    const SurveyResult = AV.Object.extend('SurveyResults_2');
     const result = new SurveyResult();
 
     // 保存数据到表中

@@ -299,8 +299,8 @@
         <ol>
           <li>填写您的基本信息。</li>
           <li>选择您擅长的疾病大类，并在其下选择您熟悉的目标疾病。</li>
-          <li>针对每个选中的目标疾病，对其相关的病因疾病进行评估。每个病因疾病后均显示第一轮的平均信心值。</li>
-          <li>评分选项：0-5分（0=无关联，1-5=不同程度的关联信心），以及"不清楚"选项。</li>
+          <li>针对每个选中的目标疾病，您将对其相关的病因疾病进行评估。每个病因疾病后将显示第一轮的平均信心值供您参考。</li>
+          <li>您可对每个疾病对的相关性给出0-5分的评估（0=无关联，5=关联性很强）；若您不了解该病因疾病，则选择"不清楚"选项。</li>
         </ol>
       </div>
     </div>
@@ -312,7 +312,7 @@
     </div>
   </div>
   
-  <p class="closing-note">请根据您的专业经验或研究成果进行选择，感谢您的参与与支持！</p>
+  <p class="closing-note">请参照第一轮问卷信息，根据您的专业经验或研究成果进行选择，感谢您的参与与支持！</p>
   
   <button onclick="goToStep(1)">开始调查</button>
 </div>
@@ -366,8 +366,8 @@
     
     <div style="margin-top:20px;">
       <h4>接下来的操作：</h4>
-      <p>系统将依次为您选择的每个目标疾病收集病因疾病的评估。每个病因疾病后均显示第一轮的平均信心值。</p>
-      <p><strong>评分说明：</strong>0=无关联，1=非常不确定，2=不太确定，3=一般，4=比较确定，5=非常确定，不清楚=无法判断关联性</p>
+      <p>系统将依次为您选择的每个目标疾病收集病因疾病的评估。每个病因疾病会显示第一轮相关关系评估的平均信心值。</p>
+      <p><strong>评分说明：</strong>0=无关联，1=关联性很弱，2=关联性较弱，3=一般，4=关联性较强，5=关联性很强</p>
     </div>
   </div>
   <button class="secondary" onclick="goToStep(2)">重新选择</button>
@@ -378,7 +378,7 @@
 <div class="step" id="step4">
   <div class="question">
     <h3 id="current-target-title">请评估可能导致【目标疾病】的病因疾病</h3>
-    <p>（每个病因疾病后显示第一轮平均信心值，请根据您的专业判断进行评分）</p>
+    <p>（每个病因疾病会显示第一轮平均信心值作为参考，请根据您的专业判断进行评分）</p>
     
     <div id="cause-evaluation-container"></div>
   </div>
@@ -772,7 +772,7 @@
         <div class="disease-pair-card">
           <div class="cause-disease-item">
             <p><strong>${index + 1}. ${cause.name}</strong> 
-              <span class="previous-result">第一轮平均信心值: ${cause.previousAverage.toFixed(1)} (${cause.expertCount}位专家)</span>
+              <span class="previous-result">第一轮平均信心值: ${cause.previousAverage.toFixed(1)}</span>
             </p>
             <p>请评估该疾病与目标疾病的关联性：</p>
             
@@ -783,11 +783,11 @@
               </div>
               <div class="rating-option">
                 <input type="radio" name="${causeId}" value="1" id="${causeId}-1">
-                <label for="${causeId}-1">1 (非常不确定)</label>
+                <label for="${causeId}-1">1 (很弱)</label>
               </div>
               <div class="rating-option">
                 <input type="radio" name="${causeId}" value="2" id="${causeId}-2">
-                <label for="${causeId}-2">2 (不太确定)</label>
+                <label for="${causeId}-2">2 (较弱)</label>
               </div>
               <div class="rating-option">
                 <input type="radio" name="${causeId}" value="3" id="${causeId}-3">
@@ -795,11 +795,11 @@
               </div>
               <div class="rating-option">
                 <input type="radio" name="${causeId}" value="4" id="${causeId}-4">
-                <label for="${causeId}-4">4 (比较确定)</label>
+                <label for="${causeId}-4">4 (较强)</label>
               </div>
               <div class="rating-option">
                 <input type="radio" name="${causeId}" value="5" id="${causeId}-5">
-                <label for="${causeId}-5">5 (非常确定)</label>
+                <label for="${causeId}-5">5 (很强)</label>
               </div>
               <div class="rating-option">
                 <input type="radio" name="${causeId}" value="unclear" id="${causeId}-unclear">
@@ -938,11 +938,11 @@
   function getRatingText(rating) {
     switch(rating) {
       case '0': return '无关联';
-      case '1': return '非常不确定';
-      case '2': return '不太确定';
+      case '1': return '很弱';
+      case '2': return '较弱';
       case '3': return '一般';
-      case '4': return '比较确定';
-      case '5': return '非常确定';
+      case '4': return '较强';
+      case '5': return '很强';
       case 'unclear': return '不清楚';
       default: return '';
     }
@@ -1076,4 +1076,5 @@
 </script>
 </body>
 </html>
+
 

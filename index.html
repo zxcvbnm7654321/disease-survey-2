@@ -595,56 +595,69 @@
       return;
     }
     
+    // 按大类对病因疾病进行分组
+    const causeByCategory = {};
+    targetPair.causeDiseases.forEach(cause => {
+        if (!causeByCategory[cause.category]) {
+            causeByCategory[cause.category] = [];
+        }
+        causeByCategory[cause.category].push(cause);
+    });
+    
     // 生成病因评估内容
     const container = document.getElementById('cause-evaluation-container');
     container.innerHTML = '';
     
-    targetPair.causeDiseases.forEach((cause, index) => {
-      const causeId = `cause-${index}-${cause.name.replace(/\s+/g, '-')}`;
-      
-      container.innerHTML += `
-        <div class="disease-pair-card">
-          <div class="cause-disease-item">
-            <p><strong>${index + 1}. ${cause.name}</strong> 
-              <span class="previous-result">第一轮平均信心值: ${cause.previousAverage.toFixed(1)}</span>
-            </p>
-            <p>请评估该疾病与目标疾病的关联性：</p>
+    // 遍历每个大类生成内容
+    for (const category in causeByCategory) {
+        container.innerHTML += `<h4>${category}</h4>`;
+        causeByCategory[category].forEach((cause, index) => {
+            const causeId = `cause-${index}-${cause.name.replace(/\s+/g, '-')}`;
             
-            <div class="rating-options">
-              <div class="rating-option">
-                <input type="radio" name="${causeId}" value="0" id="${causeId}-0" required>
-                <label for="${causeId}-0">0 (无关联)</label>
+            container.innerHTML += `
+                <div class="disease-pair-card">
+                    <div class="cause-disease-item">
+                        <p><strong>${index + 1}. ${cause.name}</strong> 
+                          <span class="previous-result">第一轮平均信心值: ${cause.previousAverage.toFixed(1)}</span>
+                        </p>
+                        <p>请评估该疾病与目标疾病的关联性：</p>
+                        
+
+              <div class="rating-options">
+                <div class="rating-option">
+                  <input type="radio" name="${causeId}" value="0" id="${causeId}-0" required>
+                  <label for="${causeId}-0">0 (无关联)</label>
+                </div>
+                <div class="rating-option">
+                  <input type="radio" name="${causeId}" value="1" id="${causeId}-1">
+                  <label for="${causeId}-1">1 (很弱)</label>
+                </div>
+                <div class="rating-option">
+                  <input type="radio" name="${causeId}" value="2" id="${causeId}-2">
+                  <label for="${causeId}-2">2 (较弱)</label>
+                </div>
+                <div class="rating-option">
+                  <input type="radio" name="${causeId}" value="3" id="${causeId}-3">
+                  <label for="${causeId}-3">3 (一般)</label>
+                </div>
+                <div class="rating-option">
+                  <input type="radio" name="${causeId}" value="4" id="${causeId}-4">
+                  <label for="${causeId}-4">4 (较强)</label>
+                </div>
+                <div class="rating-option">
+                  <input type="radio" name="${causeId}" value="5" id="${causeId}-5">
+                  <label for="${causeId}-5">5 (很强)</label>
+                </div>
+                <div class="rating-option">
+                   <input type="radio" name="${causeId}" value="unclear" id="${causeId}-unclear">
+                  <label for="${causeId}-unclear">不清楚</label>
               </div>
-              <div class="rating-option">
-                <input type="radio" name="${causeId}" value="1" id="${causeId}-1">
-                <label for="${causeId}-1">1 (很弱)</label>
-              </div>
-              <div class="rating-option">
-                <input type="radio" name="${causeId}" value="2" id="${causeId}-2">
-                <label for="${causeId}-2">2 (较弱)</label>
-              </div>
-              <div class="rating-option">
-                <input type="radio" name="${causeId}" value="3" id="${causeId}-3">
-                <label for="${causeId}-3">3 (一般)</label>
-              </div>
-              <div class="rating-option">
-                <input type="radio" name="${causeId}" value="4" id="${causeId}-4">
-                <label for="${causeId}-4">4 (较强)</label>
-              </div>
-              <div class="rating-option">
-                <input type="radio" name="${causeId}" value="5" id="${causeId}-5">
-                <label for="${causeId}-5">5 (很强)</label>
-              </div>
-              <div class="rating-option">
-                <input type="radio" name="${causeId}" value="unclear" id="${causeId}-unclear">
-                <label for="${causeId}-unclear">不清楚</label>
-              </div>
-            </div>
-          </div>
+             </div>
+           </div>
         </div>
-      `;
-    });
-  }
+       `;
+     });
+   }
   
   // 验证病因评估并进入下一步
   function validateCauseEvaluation() {

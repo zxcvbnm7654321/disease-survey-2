@@ -456,13 +456,26 @@
         document.addEventListener('DOMContentLoaded', function () {
             // 从JSON文件中加载数据
             fetch('信心值统计结果_hm.json')
-               .then(response => response.json())
+               .then(response => {
+                    if (!response.ok) {
+                        throw new Error('网络响应错误: ' + response.status);
+                    }
+                    return response.json();
+                })
                .then(data => {
+                    console.log('成功加载数据:', data);
                     unconvergedPairs = data;
                     // 初始化疾病选择界面，这里会调用getTargetCategories进行按大类分类
                     initTargetSelection(); 
                 })
-               .catch(error => console.error('读取JSON文件出错:', error));
+               .catch(error => {
+                    console.error('读取JSON文件出错:', error);
+                    // 显示错误信息给用户
+                    const errorMessage = document.createElement('div');
+                    errorMessage.className = 'message error';
+                    errorMessage.textContent = '数据加载失败，请联系管理员或检查数据文件是否存在。';
+                    document.body.appendChild(errorMessage);
+                });
 
             // 修复PC端点击下一步无响应问题
             document.getElementById('step1-next').addEventListener('click', function (e) {
@@ -512,7 +525,7 @@
                 selectedCategories.push(checkbox.value);
             });
             
-            const targetCategories = getTargetCategories();
+            // 直接使用全局变量targetDiseaseCategories，而不是重新调用getTargetCategories()
             const targetDiseasesDiv = document.getElementById('target-diseases');
             
             if (selectedCategories.length === 0) {
@@ -520,21 +533,37 @@
                 return;
             }
             
+            // 检查数据是否已加载
+            if (!targetDiseaseCategories || Object.keys(targetDiseaseCategories).length === 0) {
+                targetDiseasesDiv.innerHTML = '<p>数据加载中，请稍候...</p>';
+                // 尝试重新加载数据
+                if (unconvergedPairs && unconvergedPairs.length > 0) {
+                    getTargetCategories();
+                } else {
+                    targetDiseasesDiv.innerHTML = '<p>数据加载失败，请刷新页面重试</p>';
+                }
+                return;
+            }
+            
             targetDiseasesDiv.innerHTML = '';
             
             selectedCategories.forEach(category => {
-                const diseases = targetCategories[category] || [];
+                const diseases = targetDiseaseCategories[category] || [];
                 let html = `<div style="margin-bottom:15px;"><strong>${category}</strong>`;
                 
-                diseases.forEach(disease => {
-                    html += `
-                        <div class="disease-item">
-                            <input type="checkbox" id="target-disease-${disease.name.replace(/\s+/g, '-')}" 
-                                   value="${disease.name}" data-category="${category}">
-                            <label for="target-disease-${disease.name.replace(/\s+/g, '-')}">${disease.name}</label>
-                        </div>
-                    `;
-                });
+                if (diseases.length === 0) {
+                    html += '<p>该大类下没有目标疾病</p>';
+                } else {
+                    diseases.forEach(disease => {
+                        html += `
+                            <div class="disease-item">
+                                <input type="checkbox" id="target-disease-${disease.name.replace(/\s+/g, '-')}" 
+                                       value="${disease.name}" data-category="${category}">
+                                <label for="target-disease-${disease.name.replace(/\s+/g, '-')}">${disease.name}</label>
+                            </div>
+                        `;
+                    });
+                }
                 
                 html += '</div>';
                 targetDiseasesDiv.innerHTML += html;
@@ -607,15 +636,16 @@
             container.innerHTML = '';
             
             // 遍历每个大类生成内容
+            let globalIndex = 0; // 使用全局索引确保ID唯一
             for (const category in causeByCategory) {
                 container.innerHTML += `<h4>${category}</h4>`;
-                causeByCategory[category].forEach((cause, index) => {
-                    const causeId = `cause-${index}-${cause.name.replace(/\s+/g, '-')}`;
+                causeByCategory[category].forEach((cause) => {
+                    const causeId = `cause-${globalIndex}-${cause.name.replace(/\s+/g, '-')}`;
                     
                     container.innerHTML += `
                         <div class="disease-pair-card">
                             <div class="cause-disease-item">
-                                <p><strong>${index + 1}. ${cause.name}</strong> 
+                                <p><strong>${globalIndex + 1}. ${cause.name}</strong> 
                                   <span class="previous-result">第一轮平均信心值: ${cause.previousAverage.toFixed(1)}</span>
                                 </p>
                                 <p>请评估该疾病与目标疾病的关联性：</p>
@@ -653,6 +683,7 @@
                              </div>
                         </div>
                     `;
+                    globalIndex++; // 增加全局索引
                 });
             }
         }
@@ -672,23 +703,37 @@
             const evaluations = [];
             let allRated = true;
             
-            targetPair.causeDiseases.forEach((cause, index) => {
-                const causeId = `cause-${index}-${cause.name.replace(/\s+/g, '-')}`;
-                const selectedOption = document.querySelector(`input[name="${causeId}"]:checked`);
-                
-                if (!selectedOption) {
-                    allRated = false;
-                    return;
+            // 按大类对病因疾病进行分组（与生成表单时的逻辑一致）
+            const causeByCategory = {};
+            targetPair.causeDiseases.forEach(cause => {
+                if (!causeByCategory[cause.category]) {
+                    causeByCategory[cause.category] = [];
                 }
-                
-                evaluations.push({
-                    causeDisease: cause.name,
-                    causeCategory: cause.category,
-                    previousAverage: cause.previousAverage,
-                    previousExpertCount: cause.expertCount,
-                    rating: selectedOption.value
-                });
+                causeByCategory[cause.category].push(cause);
             });
+            
+            let globalIndex = 0; // 使用全局索引确保ID匹配
+            for (const category in causeByCategory) {
+                causeByCategory[category].forEach(cause => {
+                    const causeId = `cause-${globalIndex}-${cause.name.replace(/\s+/g, '-')}`;
+                    const selectedOption = document.querySelector(`input[name="${causeId}"]:checked`);
+                    
+                    if (!selectedOption) {
+                        allRated = false;
+                        // 不使用return，继续检查其他选项
+                    } else {
+                        evaluations.push({
+                            causeDisease: cause.name,
+                            causeCategory: cause.category,
+                            previousAverage: cause.previousAverage,
+                            previousExpertCount: cause.expertCount,
+                            rating: selectedOption.value
+                        });
+                    }
+                    
+                    globalIndex++; // 增加全局索引
+                });
+            }
             
             if (!allRated) {
                 showMessage('请为所有病因疾病完成评估', 4, 'error');

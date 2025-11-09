@@ -47,31 +47,6 @@
             border: 1px solid #ddd;
             border-radius: 5px;
         }
-        .file-upload {
-            margin: 20px 0;
-            padding: 20px;
-            border: 2px dashed #ccc;
-            border-radius: 8px;
-            text-align: center;
-            cursor: pointer;
-            transition: border-color 0.3s;
-        }
-        .file-upload:hover {
-            border-color: #4CAF50;
-        }
-        .file-upload input {
-            display: none;
-        }
-        .file-upload-label {
-            font-size: 16px;
-            color: #555;
-            cursor: pointer;
-        }
-        .file-info {
-            margin-top: 10px;
-            color: #666;
-            font-size: 0.9em;
-        }
         input[type="text"] {
             padding: 6px 8px;
             border: 1px solid #ddd;
@@ -206,13 +181,18 @@
             background-color: #f9f9f9;
             border-radius: 6px;
         }
+        .data-loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
     </style>
 </head>
 <body>
     <h1>第二轮疾病病因关联调查</h1>
     <div class="progress">
         <span class="active" id="progress-step0">问卷说明</span>
-        <span id="progress-step1">数据上传</span>
+        <span id="progress-step1">数据加载</span>
         <span id="progress-step2">医师信息</span>
         <span id="progress-step3">疾病评估</span>
         <span id="progress-complete">完成</span>
@@ -226,7 +206,7 @@
             
             <h3>调查流程：</h3>
             <ol>
-                <li>上传包含疾病对数据的Excel文件</li>
+                <li>系统将自动加载疾病对数据</li>
                 <li>填写您的基本信息</li>
                 <li>对所有未收敛的疾病对进行评估，每个疾病对会显示第一轮的平均信心值供参考</li>
                 <li>对每个疾病对的相关性给出0-5分的评估（0=无关联，5=关联性很强）；若不了解该病因疾病，可选择"不清楚"</li>
@@ -235,24 +215,18 @@
         <button onclick="goToStep(1)">开始调查</button>
     </div>
 
-    <!-- 步骤1：数据上传 -->
+    <!-- 步骤1：数据加载 -->
     <div class="step" id="step1">
         <div class="question">
-            <h3>数据文件上传</h3>
-            <p>请上传包含疾病对数据的Excel文件（.xlsx格式）</p>
-            
-            <div class="file-upload" id="fileUploadArea">
-                <input type="file" id="excelFile" accept=".xlsx">
-                <label for="excelFile" class="file-upload-label">
-                    点击或拖拽文件到此处上传
-                </label>
-                <div class="file-info" id="fileInfo">未选择文件</div>
+            <h3>数据加载中</h3>
+            <div class="data-loading" id="loadingMessage">
+                <p>正在加载疾病对数据，请稍候...</p>
+                <p>（系统正在读取预先上传的Excel文件）</p>
             </div>
-            
-            <div class="message" id="fileMessage"></div>
+            <div class="message" id="dataMessage"></div>
         </div>
         <button class="secondary" onclick="goToStep(0)">返回</button>
-        <button onclick="validateFileUpload()" id="uploadNext">下一步</button>
+        <button id="dataNext" onclick="goToStep(2)" disabled>下一步</button>
     </div>
 
     <!-- 步骤2：医师信息收集 -->
@@ -327,7 +301,7 @@
         // 全局变量
         let unconvergedPairs = []; // 存储筛选后的未收敛疾病对
         let targetDiseases = [];   // 按目标疾病分组的数据
-        let uploadedFileName = "";
+        const excelFilePath = "信心值统计结果_hm.xlsx"; // 预先上传的Excel文件路径
         
         let userData = {
             expertId: generateAnonymousId(),
@@ -346,79 +320,58 @@
 
         // 页面加载初始化
         document.addEventListener('DOMContentLoaded', function () {
-            // 文件上传处理
-            const excelFile = document.getElementById('excelFile');
-            const fileUploadArea = document.getElementById('fileUploadArea');
-            const fileInfo = document.getElementById('fileInfo');
-            
-            // 点击上传区域触发文件选择
-            fileUploadArea.addEventListener('click', () => {
-                excelFile.click();
+            // 当进入数据加载步骤时自动加载Excel数据
+            const step1Element = document.getElementById('step1');
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (step1Element.classList.contains('active')) {
+                        loadExcelData();
+                        observer.disconnect();
+                    }
+                });
             });
             
-            // 拖拽上传
-            fileUploadArea.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                fileUploadArea.style.borderColor = '#4CAF50';
-            });
-            
-            fileUploadArea.addEventListener('dragleave', () => {
-                fileUploadArea.style.borderColor = '#ccc';
-            });
-            
-            fileUploadArea.addEventListener('drop', (e) => {
-                e.preventDefault();
-                fileUploadArea.style.borderColor = '#ccc';
-                
-                if (e.dataTransfer.files.length) {
-                    excelFile.files = e.dataTransfer.files;
-                    handleFileSelection(excelFile.files[0]);
-                }
-            });
-            
-            // 文件选择处理
-            excelFile.addEventListener('change', (e) => {
-                if (e.target.files.length) {
-                    handleFileSelection(e.target.files[0]);
-                }
-            });
+            observer.observe(step1Element, { attributes: true, attributeFilter: ['class'] });
         });
 
-        // 处理文件选择
-        function handleFileSelection(file) {
-            if (!file.name.endsWith('.xlsx')) {
-                showMessage('请上传.xlsx格式的Excel文件', 'file', 'error');
-                return;
-            }
-            
-            uploadedFileName = file.name;
-            document.getElementById('fileInfo').textContent = `已选择: ${file.name}`;
-            
-            // 解析Excel文件
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    
-                    // 获取第一个工作表
-                    const firstSheetName = workbook.SheetNames[0];
-                    const worksheet = workbook.Sheets[firstSheetName];
-                    
-                    // 转换为JSON
-                    const jsonData = XLSX.utils.sheet_to_json(worksheet);
-                    console.log('Excel数据解析成功:', jsonData);
-                    
-                    // 处理解析后的数据
-                    processExcelData(jsonData);
-                    
-                    showMessage(`文件解析成功，共发现 ${jsonData.length} 条疾病对数据`, 'file', 'success');
-                } catch (error) {
-                    console.error('Excel解析错误:', error);
-                    showMessage('文件解析失败，请检查文件格式是否正确', 'file', 'error');
-                }
-            };
-            reader.readAsArrayBuffer(file);
+        // 加载并解析Excel数据
+        function loadExcelData() {
+            fetch(excelFilePath)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`无法加载文件: ${response.status}`);
+                    }
+                    return response.arrayBuffer();
+                })
+                .then(data => {
+                    try {
+                        // 解析Excel文件
+                        const workbook = XLSX.read(new Uint8Array(data), { type: 'array' });
+                        
+                        // 获取第一个工作表
+                        const firstSheetName = workbook.SheetNames[0];
+                        const worksheet = workbook.Sheets[firstSheetName];
+                        
+                        // 转换为JSON
+                        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+                        console.log('Excel数据解析成功:', jsonData);
+                        
+                        // 处理解析后的数据
+                        processExcelData(jsonData);
+                        
+                        showMessage(`数据加载成功，共发现 ${jsonData.length} 条疾病对数据，筛选出 ${unconvergedPairs.length} 条未收敛数据`, 'data', 'success');
+                        
+                        // 启用下一步按钮
+                        document.getElementById('dataNext').disabled = false;
+                    } catch (error) {
+                        console.error('Excel解析错误:', error);
+                        showMessage('文件解析失败，请检查文件格式是否正确', 'data', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('加载Excel文件错误:', error);
+                    showMessage('无法加载数据文件，请联系管理员', 'data', 'error');
+                });
         }
 
         // 处理Excel数据
@@ -459,21 +412,6 @@
             unconvergedPairs = targetDiseases;
         }
 
-        // 验证文件上传
-        function validateFileUpload() {
-            if (!uploadedFileName) {
-                showMessage('请先上传Excel数据文件', 'file', 'error');
-                return;
-            }
-            
-            if (unconvergedPairs.length === 0) {
-                showMessage('未找到有效的未收敛疾病对数据', 'file', 'error');
-                return;
-            }
-            
-            goToStep(2);
-        }
-
         // 验证医师信息
         function validateDoctorInfo() {
             const name = document.getElementById('doctor-name').value.trim();
@@ -491,6 +429,14 @@
             // 开始处理病因评估
             userData.currentTargetIndex = 0;
             userData.allEvaluations = [];
+            
+            // 检查是否有数据
+            if (unconvergedPairs.length === 0) {
+                showMessage('未找到有效的未收敛疾病对数据', 3, 'error');
+                goToStep('complete');
+                return;
+            }
+            
             loadCurrentTargetEvaluation();
             goToStep(3);
         }
@@ -703,7 +649,7 @@
                 currentRound: userData.currentRound,
                 submitTime: userData.submitTime,
                 targetDiseasesCount: userData.allEvaluations.length,
-                dataSource: uploadedFileName,
+                dataSource: excelFilePath,
                 allEvaluations: userData.allEvaluations.map(item => ({
                     targetDisease: item.targetDisease,
                     evaluations: item.evaluations.map(e => ({
@@ -798,7 +744,7 @@
         }
       
         function showMessage(text, step, type) {
-            const el = document.getElementById(step === 'file' ? 'fileMessage' : 'message' + step);
+            const el = document.getElementById(step === 'data' ? 'dataMessage' : 'message' + step);
             if (el) {
                 el.textContent = text;
                 el.className = 'message ' + type;
@@ -809,3 +755,4 @@
     </script>
 </body>
 </html>
+

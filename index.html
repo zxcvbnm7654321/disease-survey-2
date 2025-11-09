@@ -393,9 +393,9 @@
             serverURL: "https://ggqiiywe.lc-cn-n1-shared.com"
         });
 
-        // 模拟的第一轮不收敛疾病对数据
-        // 这里假设了一些疾病对及其第一轮的平均信心值和专家数量
-        let unconvergedPairs; // 先声明unconvergedPairs，后续从JSON文件加载数据后赋值
+        // 声明变量
+        let unconvergedPairs = []; // 存储所有未收敛的疾病对
+        let allPairs = []; // 临时存储所有疾病对数据
 
         let userData = {
             expertId: generateAnonymousId(),
@@ -451,6 +451,7 @@
                     document.body.appendChild(errorMessage);
                 });
 
+            // 修复PC端点击下一步无响应问题
             document.getElementById('step1-next').addEventListener('click', function (e) {
                 e.preventDefault();
                 validateDoctorInfo();
@@ -463,7 +464,7 @@
             const hospital = document.getElementById('hospital').value.trim();
 
             if (!name || !hospital) {
-                showMessage('请填写姓名所属单位', 1, 'error');
+                showMessage('请填写姓名和所属单位', 1, 'error');
                 return;
             }
 
@@ -474,6 +475,14 @@
             // 开始处理病因评估
             userData.currentTargetIndex = 0;
             userData.allEvaluations = [];
+            
+            // 检查是否有数据
+            if (unconvergedPairs.length === 0) {
+                showMessage('没有找到需要评估的未收敛疾病对数据', 2, 'error');
+                goToStep('complete');
+                return;
+            }
+            
             loadCurrentTargetEvaluation();
             goToStep(2);
         }
@@ -776,6 +785,8 @@
         // 步骤切换函数
         function goToStep(stepNumber) {
             try {
+                console.log('尝试切换到步骤:', stepNumber);
+                
                 // 移除所有步骤的active类
                 document.querySelectorAll('.step').forEach(step => {
                     step.classList.remove('active');
@@ -792,7 +803,9 @@
                 if (targetStep) {
                     targetStep.classList.add('active');
                     window.scrollTo(0, 0);
+                    console.log('成功切换到步骤:', stepNumber);
                 } else {
+                    console.error('找不到步骤元素:', stepNumber);
                     forceFinish();
                 }
                 

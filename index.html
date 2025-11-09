@@ -273,6 +273,15 @@
             font-weight: bold;
             color: #2196f3;
         }
+        /* 进度显示样式 */
+        .progress-display {
+            margin: 15px 0;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-radius: 6px;
+            text-align: center;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -280,9 +289,7 @@
     <div class="progress">
         <span class="active" id="progress-step0">问卷说明</span>
         <span id="progress-step1">医师信息</span>
-        <span id="progress-step2">目标疾病选择</span>
-        <span id="progress-step3">目标疾病确认</span>
-        <span id="progress-step4">病因评估</span>
+        <span id="progress-step2">疾病评估</span>
         <span id="progress-complete">完成</span>
     </div>
       
@@ -293,13 +300,13 @@
                 <h2>调查目标</h2>
                 <p class="round-info">
                     本调查旨在征询临床专家对疾病间潜在因果关系的专业见解与评估。基于第一轮调查结果，第二轮问卷调查将针对专家意见不收敛的疾病对进行进一步评估。
+                </p>
                 
                 <div class="survey-flow">
                     <p><strong>调查流程：</strong></p>
                     <ol>
                         <li>填写您的基本信息。</li>
-                        <li>选择您擅长的疾病大类，并在其下选择您熟悉的目标疾病。</li>
-                        <li>针对每个选中的目标疾病，您将对其相关的病因疾病进行评估。每个病因疾病后将显示第一轮的平均信心值供您参考。</li>
+                        <li>对所有未收敛的疾病对进行评估。每个疾病对会显示第一轮的平均信心值供您参考。</li>
                         <li>您可对每个疾病对的相关性给出0-5分的评估（0=无关联，5=关联性很强）；若您不了解该病因疾病，则选择"不清楚"选项。</li>
                     </ol>
                 </div>
@@ -341,50 +348,21 @@
         <div class="message" id="message1"></div>
     </div>
 
-    <!-- 步骤2：目标疾病选择（多选题） -->
+    <!-- 步骤2：疾病评估 -->
     <div class="step" id="step2">
-        <div class="question">
-            <h3>请选择您擅长的目标疾病（可多选）</h3>
-            <p>注：以下仅显示第一轮调查中专家意见不收敛的疾病对中的目标疾病</p>
-            
-            <h4>1. 选择目标疾病大类（可多选）</h4>
-            <div id="target-categories"></div>
-            
-            <h4>2. 从选中的大类中选择具体目标疾病（可多选）</h4>
-            <div id="target-diseases" style="margin-top:15px;"></div>
-        </div>
-        <button class="secondary" onclick="goToStep(1)">返回</button>
-        <button onclick="validateTargetSelection()">下一步</button>
-        <div class="message" id="message2"></div>
-    </div>
-
-    <!-- 步骤3：目标疾病确认 -->
-    <div class="step" id="step3">
-        <div class="question">
-            <h3>您选择的目标疾病如下：</h3>
-            <div id="target-summary" class="target-list"></div>
-            
-            <div style="margin-top:20px;">
-                <h4>接下来的操作：</h4>
-                <p>系统将依次为您选择的每个目标疾病收集病因疾病的评估。每个病因疾病会显示第一轮相关关系评估的平均信心值。</p>
-                <p><strong>评分说明：</strong>0=无关联，1=关联性很弱，2=关联性较弱，3=一般，4=关联性较强，5=关联性很强</p>
-            </div>
-        </div>
-        <button class="secondary" onclick="goToStep(2)">重新选择</button>
-        <button onclick="startCauseEvaluation()">开始评估病因</button>
-    </div>
-
-    <!-- 步骤4：依次显示目标疾病的病因评估 -->
-    <div class="step" id="step4">
         <div class="question">
             <h3 id="current-target-title">请评估可能导致【目标疾病】的病因疾病</h3>
             <p>（每个病因疾病会显示第一轮平均信心值作为参考，请根据您的专业判断进行评分）</p>
+            
+            <div class="progress-display">
+                <span id="progress-text">进度：0/0</span>
+            </div>
             
             <div id="cause-evaluation-container"></div>
         </div>
         <button class="secondary" onclick="goToPreviousStep()">上一步</button>
         <button onclick="validateCauseEvaluation()">下一步</button>
-        <div class="message" id="message4"></div>
+        <div class="message" id="message2"></div>
     </div>
 
     <!-- 结束页面 -->
@@ -418,30 +396,12 @@
         // 模拟的第一轮不收敛疾病对数据
         // 这里假设了一些疾病对及其第一轮的平均信心值和专家数量
         let unconvergedPairs; // 先声明unconvergedPairs，后续从JSON文件加载数据后赋值
-        let targetDiseaseCategories = {}; // 新增变量，用于存储按大类分类后的目标疾病数据
-
-        // 从unconvergedPairs中提取目标疾病分类，并按大类分类
-        function getTargetCategories() {
-            // 清空之前可能存在的数据
-            targetDiseaseCategories = {}; 
-            unconvergedPairs.forEach(pair => {
-                if (!targetDiseaseCategories[pair.targetCategory]) {
-                    targetDiseaseCategories[pair.targetCategory] = [];
-                }
-                targetDiseaseCategories[pair.targetCategory].push({
-                    name: pair.targetDisease,
-                    causeCount: pair.causeDiseases.length
-                });
-            });
-            return targetDiseaseCategories;
-        }
 
         let userData = {
             expertId: generateAnonymousId(),
             currentRound: 2,
             doctorName: '',
             hospital: '',
-            targetDiseases: [],
             currentTargetIndex: 0,
             allEvaluations: [],
             submitTime: '' // 记录提交时间
@@ -463,21 +423,34 @@
                     return response.json();
                 })
                .then(data => {
-                    console.log('成功加载数据:', data);
-                    unconvergedPairs = data;
-                    // 初始化疾病选择界面，这里会调用getTargetCategories进行按大类分类
-                    initTargetSelection(); 
+                    console.log('成功加载所有数据:', data);
+                    allPairs = data;
+                    
+                    // 筛选出"是否收敛=1"以外的疾病对
+                    // 只保留"是否收敛"字段不存在、为0或其他值的疾病对
+                    unconvergedPairs = allPairs.filter(pair => {
+                        // 检查是否存在"是否收敛"字段且值为1
+                        return pair["是否收敛"] !== 1;
+                    });
+                    
+                    console.log(`筛选后保留 ${unconvergedPairs.length} 个未收敛的疾病对`);
+                    
+                    // 如果没有符合条件的数据，显示提示信息
+                    if (unconvergedPairs.length === 0) {
+                        const errorMessage = document.createElement('div');
+                        errorMessage.className = 'message error';
+                        errorMessage.textContent = '没有找到需要评估的未收敛疾病对数据。';
+                        document.body.appendChild(errorMessage);
+                    }
                 })
                .catch(error => {
                     console.error('读取JSON文件出错:', error);
-                    // 显示错误信息给用户
                     const errorMessage = document.createElement('div');
                     errorMessage.className = 'message error';
                     errorMessage.textContent = '数据加载失败，请联系管理员或检查数据文件是否存在。';
                     document.body.appendChild(errorMessage);
                 });
 
-            // 修复PC端点击下一步无响应问题
             document.getElementById('step1-next').addEventListener('click', function (e) {
                 e.preventDefault();
                 validateDoctorInfo();
@@ -498,125 +471,30 @@
             userData.doctorName = name;
             userData.hospital = hospital;
 
-            goToStep(2);
-        }
-
-        // 初始化目标疾病选择
-        function initTargetSelection() {
-            const targetCategories = getTargetCategories();
-            const targetCategoriesDiv = document.getElementById('target-categories');
-            targetCategoriesDiv.innerHTML = '';
-
-            Object.keys(targetCategories).forEach(category => {
-                targetCategoriesDiv.innerHTML += `
-                    <div class="category-item">
-                        <input type="checkbox" id="target-category-${category.replace(/\s+/g, '-')}" 
-                               value="${category}" onchange="updateTargetDiseases()">
-                        <label for="target-category-${category.replace(/\s+/g, '-')}">${category}</label>
-                    </div>
-                `;
-            });
-        }
-      
-        // 更新目标疾病列表
-        function updateTargetDiseases() {
-            const selectedCategories = [];
-            document.querySelectorAll('#target-categories input:checked').forEach(checkbox => {
-                selectedCategories.push(checkbox.value);
-            });
-            
-            // 直接使用全局变量targetDiseaseCategories，而不是重新调用getTargetCategories()
-            const targetDiseasesDiv = document.getElementById('target-diseases');
-            
-            if (selectedCategories.length === 0) {
-                targetDiseasesDiv.innerHTML = '<p>请先选择至少一个目标疾病大类</p>';
-                return;
-            }
-            
-            // 检查数据是否已加载
-            if (!targetDiseaseCategories || Object.keys(targetDiseaseCategories).length === 0) {
-                targetDiseasesDiv.innerHTML = '<p>数据加载中，请稍候...</p>';
-                // 尝试重新加载数据
-                if (unconvergedPairs && unconvergedPairs.length > 0) {
-                    getTargetCategories();
-                } else {
-                    targetDiseasesDiv.innerHTML = '<p>数据加载失败，请刷新页面重试</p>';
-                }
-                return;
-            }
-            
-            targetDiseasesDiv.innerHTML = '';
-            
-            selectedCategories.forEach(category => {
-                const diseases = targetDiseaseCategories[category] || [];
-                let html = `<div style="margin-bottom:15px;"><strong>${category}</strong>`;
-                
-                if (diseases.length === 0) {
-                    html += '<p>该大类下没有目标疾病</p>';
-                } else {
-                    diseases.forEach(disease => {
-                        html += `
-                            <div class="disease-item">
-                                <input type="checkbox" id="target-disease-${disease.name.replace(/\s+/g, '-')}" 
-                                       value="${disease.name}" data-category="${category}">
-                                <label for="target-disease-${disease.name.replace(/\s+/g, '-')}">${disease.name}</label>
-                            </div>
-                        `;
-                    });
-                }
-                
-                html += '</div>';
-                targetDiseasesDiv.innerHTML += html;
-            });
-        }
-      
-        // 验证目标疾病选择
-        function validateTargetSelection() {
-            const selectedDiseases = [];
-            document.querySelectorAll('#target-diseases input:checked').forEach(checkbox => {
-                selectedDiseases.push({
-                    category: checkbox.getAttribute('data-category'),
-                    name: checkbox.value
-                });
-            });
-            
-            if (selectedDiseases.length === 0) {
-                showMessage('请至少选择一个具体的目标疾病', 2, 'error');
-                return;
-            }
-            
-            userData.targetDiseases = selectedDiseases;
-            
-            // 生成目标疾病确认内容
-            const targetSummary = document.getElementById('target-summary');
-            targetSummary.innerHTML = selectedDiseases.map((d, i) => {
-                // 查找该目标疾病对应的病因数量
-                const targetPair = unconvergedPairs.find(pair => pair.targetDisease === d.name);
-                const causeCount = targetPair ? targetPair.causeDiseases.length : 0;
-                return `<p><strong>${i+1}. ${d.name}</strong>（大类：${d.category}）</p>`;
-            }).join('');
-            
-            goToStep(3);
-        }
-      
-        // 开始处理病因评估
-        function startCauseEvaluation() {
+            // 开始处理病因评估
             userData.currentTargetIndex = 0;
             userData.allEvaluations = [];
             loadCurrentTargetEvaluation();
-            goToStep(4);
+            goToStep(2);
         }
       
         // 加载当前目标疾病的病因评估
         function loadCurrentTargetEvaluation() {
-            const currentTarget = userData.targetDiseases[userData.currentTargetIndex];
+            if (!unconvergedPairs || unconvergedPairs.length === 0) {
+                document.getElementById('cause-evaluation-container').innerHTML = 
+                    '<div class="empty-state">未找到相关疾病数据</div>';
+                return;
+            }
+            
+            const currentTarget = unconvergedPairs[userData.currentTargetIndex];
             document.getElementById('current-target-title').textContent = 
-                `请评估可能导致【${currentTarget.name}】的病因疾病`;
+                `请评估可能导致【${currentTarget.targetDisease}】的病因疾病`;
             
-            // 查找该目标疾病对应的病因疾病
-            const targetPair = unconvergedPairs.find(pair => pair.targetDisease === currentTarget.name);
+            // 更新进度显示
+            document.getElementById('progress-text').textContent = 
+                `进度：${userData.currentTargetIndex + 1}/${unconvergedPairs.length}`;
             
-            if (!targetPair || !targetPair.causeDiseases || targetPair.causeDiseases.length === 0) {
+            if (!currentTarget || !currentTarget.causeDiseases || currentTarget.causeDiseases.length === 0) {
                 document.getElementById('cause-evaluation-container').innerHTML = 
                     '<div class="empty-state">未找到相关病因疾病数据</div>';
                 return;
@@ -624,7 +502,7 @@
             
             // 按大类对病因疾病进行分组
             const causeByCategory = {};
-            targetPair.causeDiseases.forEach(cause => {
+            currentTarget.causeDiseases.forEach(cause => {
                 if (!causeByCategory[cause.category]) {
                     causeByCategory[cause.category] = [];
                 }
@@ -690,10 +568,15 @@
       
         // 验证病因评估并进入下一步
         function validateCauseEvaluation() {
-            const currentTarget = userData.targetDiseases[userData.currentTargetIndex];
-            const targetPair = unconvergedPairs.find(pair => pair.targetDisease === currentTarget.name);
+            if (!unconvergedPairs || unconvergedPairs.length === 0) {
+                // 没有疾病数据需要评估，直接进入完成页面
+                goToStep('complete');
+                return;
+            }
             
-            if (!targetPair || !targetPair.causeDiseases || targetPair.causeDiseases.length === 0) {
+            const currentTarget = unconvergedPairs[userData.currentTargetIndex];
+            
+            if (!currentTarget || !currentTarget.causeDiseases || currentTarget.causeDiseases.length === 0) {
                 // 没有病因疾病需要评估，直接进入下一步
                 processNextTarget();
                 return;
@@ -705,7 +588,7 @@
             
             // 按大类对病因疾病进行分组（与生成表单时的逻辑一致）
             const causeByCategory = {};
-            targetPair.causeDiseases.forEach(cause => {
+            currentTarget.causeDiseases.forEach(cause => {
                 if (!causeByCategory[cause.category]) {
                     causeByCategory[cause.category] = [];
                 }
@@ -736,14 +619,14 @@
             }
             
             if (!allRated) {
-                showMessage('请为所有病因疾病完成评估', 4, 'error');
+                showMessage('请为所有病因疾病完成评估', 2, 'error');
                 return;
             }
             
             // 保存当前目标疾病的评估结果
             userData.allEvaluations.push({
-                targetDisease: currentTarget.name,
-                targetCategory: currentTarget.category,
+                targetDisease: currentTarget.targetDisease,
+                targetCategory: currentTarget.targetCategory,
                 evaluations: evaluations
             });
             
@@ -754,9 +637,9 @@
         // 处理下一个目标疾病
         function processNextTarget() {
             userData.currentTargetIndex++;
-            if (userData.currentTargetIndex < userData.targetDiseases.length) {
+            if (userData.currentTargetIndex < unconvergedPairs.length) {
                 loadCurrentTargetEvaluation();
-                goToStep(4);
+                goToStep(2);
             } else {
                 // 完成所有目标疾病的评估
                 try {
@@ -847,7 +730,7 @@
                 hospital: userData.hospital,
                 currentRound: userData.currentRound,
                 submitTime: userData.submitTime,
-                targetDiseasesCount: userData.targetDiseases.length,
+                targetDiseasesCount: userData.allEvaluations.length,
                 allEvaluations: userData.allEvaluations.map(item => ({
                     targetDisease: item.targetDisease,
                     targetCategory: item.targetCategory,
@@ -946,11 +829,11 @@
         // 上一步按钮逻辑
         function goToPreviousStep() {
             if (userData.currentTargetIndex === 0) {
-                goToStep(3);
+                goToStep(1);
             } else {
                 userData.currentTargetIndex--;
                 loadCurrentTargetEvaluation();
-                goToStep(4);
+                goToStep(2);
             }
         }
       
